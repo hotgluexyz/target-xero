@@ -54,61 +54,6 @@ def parse_args():
     return args
 
 
-def get_entities(entity_type, security_context, key="Name", fallback_key="Name"):
-    base_url = security_context['base_url']
-    access_token = security_context['access_token']
-    offset = 0
-    max = 100
-    entities = {}
-
-    while True:
-        query = f"select * from {entity_type} where Active=true STARTPOSITION {offset} MAXRESULTS {max}"
-        url = f"{base_url}/query?query={query}&minorversion=45"
-
-        logger.info(f"Fetch {entity_type}; url={url}; query {query}")
-
-        r = requests.get(url, headers={
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + access_token
-        })
-
-        response = r.json()
-
-        # Establish number of records returned.
-        count = response['QueryResponse'].get('maxResults')
-
-        # No results - exit loop.
-        if not count or count == 0:
-            break
-
-        # Parse the results
-        records = response['QueryResponse'][entity_type]
-
-        if not records:
-            records = []
-
-        # Append the results
-        for record in records:
-            entity_key = record.get(key, record.get(fallback_key))
-            # Ignore None keys
-            if entity_key is None:
-                logger.warning(f"Failed to parse record f{json.dumps(record)}")
-                continue
-
-            entities[entity_key] = record
-
-        # We're done - exit loop
-        if count < max:
-            break
-
-        offset += max
-
-    logger.debug(f"[get_entities]: Found {len(entities)} {entity_type}.")
-
-    return entities
-
-
 def load_journal_entries(config, accounts, categories):
     # Get input path
     input_path = f"{config['input_path']}/JournalEntries.csv"
@@ -198,13 +143,26 @@ def load_journal_entries(config, accounts, categories):
 
 
 def post_journal_entries(journals, client):
+    posted_journals = []
+
     for journal in journals:
         try:
             # Push the journal entry
-            client.push("Manual_Journals", journal)
+            res = client.push("Manual_Journals", journal)
+            # Add to array of posted journals
+            posted_journals.append(res['ManualJournals'][0]['ManualJournalID'])
         except Exception as e:
             logger.error(
                 f"Failure creating entity error=[{e}] journal=[{journal}]")
+
+            # Void all posted JEs (don't want to allow a partially successful post)
+            for pje in posted_journals:
+                client.push("Manual_Journals", {
+                    'ManualJournalID': pje,
+                    'Status': 'VOIDED'
+                })
+
+                print(f"Voided Journal Entry {pje}")
 
             raise Exception("Posting Xero JournalEntries failed!")
 

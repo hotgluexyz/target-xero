@@ -278,7 +278,7 @@ class XeroClient():
             raise_for_error(response)
             return None
         else:
-            return response.text
+            return response.json()
 
 
 def raise_for_error(resp):
