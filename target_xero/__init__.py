@@ -61,8 +61,8 @@ def load_journal_entries(config, accounts, categories):
     df = pd.read_csv(input_path)
     # Verify it has required columns
     cols = list(df.columns)
-    REQUIRED_COLS = ["Transaction Date", "Journal Entry Id", "Customer Name",
-                     "Class", "Account Number", "Account Name", "Posting Type", "Description"]
+    REQUIRED_COLS = ["Transaction Date", "Journal Entry Id", "Class",
+                     "Account Number", "Account Name", "Posting Type", "Description"]
 
     if not all(col in cols for col in REQUIRED_COLS):
         logger.error(
@@ -71,6 +71,12 @@ def load_journal_entries(config, accounts, categories):
 
     journal_entries = []
     errored = False
+
+    def add_tracking(line_item, tracking):
+        if "Tracking" in line_item:
+            line_item["Tracking"].append(tracking)
+        else:
+            line_item["Tracking"] = [tracking]
 
     def build_lines(x):
         # Get the journal entry id
@@ -109,10 +115,42 @@ def load_journal_entries(config, accounts, categories):
             tracking = categories.get(class_name)
 
             if tracking is not None:
-                line_item["Tracking"] = [tracking]
+                add_tracking(line_item, tracking)
             else:
                 logger.warning(
                     f"Class is missing on Journal Entry {je_id}! Name={class_name}")
+
+            # Get and set department if present
+            if config['department'] in row.index:
+                dept_name = row[config['department']]
+                tracking = categories.get(dept_name)
+
+                if tracking is not None:
+                    add_tracking(line_item, tracking)
+
+            # Get and set location if present
+            if config['location'] in row.index:
+                location = row[config['location']]
+                tracking = categories.get(location)
+
+                if tracking is not None:
+                    add_tracking(line_item, tracking)
+
+            # Get and set customer_id if present
+            if config['customer_id'] in row.index:
+                customer_id = row[config['customer_id']]
+                tracking = categories.get(customer_id)
+
+                if tracking is not None:
+                    add_tracking(line_item, tracking)
+
+            # Get and set customer_name if present
+            if config['customer_name'] in row.index:
+                customer_name = row[config['customer_name']]
+                tracking = categories.get(customer_name)
+
+                if tracking is not None:
+                    add_tracking(line_item, tracking)
 
             # Create the line item
             line_items.append(line_item)
