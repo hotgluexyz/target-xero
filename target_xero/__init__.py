@@ -121,7 +121,7 @@ def load_journal_entries(config, accounts, categories):
                     f"Class is missing on Journal Entry {je_id}! Name={class_name}")
 
             # Get and set department if present
-            if config['department'] in row.index:
+            if 'department' in config and config['department'] in row.index:
                 dept_name = row[config['department']]
                 tracking = categories.get(dept_name)
 
@@ -129,7 +129,7 @@ def load_journal_entries(config, accounts, categories):
                     add_tracking(line_item, tracking)
 
             # Get and set location if present
-            if config['location'] in row.index:
+            if 'location' in config and config['location'] in row.index:
                 location = row[config['location']]
                 tracking = categories.get(location)
 
@@ -137,7 +137,7 @@ def load_journal_entries(config, accounts, categories):
                     add_tracking(line_item, tracking)
 
             # Get and set customer_id if present
-            if config['customer_id'] in row.index:
+            if 'customer_id' in config and config['customer_id'] in row.index:
                 customer_id = row[config['customer_id']]
                 tracking = categories.get(customer_id)
 
@@ -145,7 +145,7 @@ def load_journal_entries(config, accounts, categories):
                     add_tracking(line_item, tracking)
 
             # Get and set customer_name if present
-            if config['customer_name'] in row.index:
+            if 'customer_name' in config and config['customer_name'] in row.index:
                 customer_name = row[config['customer_name']]
                 tracking = categories.get(customer_name)
 
