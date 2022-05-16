@@ -251,13 +251,25 @@ def upload_transactions(config, client):
     input_path = f"{config['input_path']}/Transactions.json"
     with open(input_path) as f:
         transactions = json.load(f)
+    
+    acc_list = client.filter("Accounts")
+    contact_list = client.filter("Contacts")
 
     pushed_ids = []
     try:
         for transaction in transactions:
+            bank = [acc["AccountID"] for acc in acc_list if acc["Name"]==transaction["Bank"] and acc["Type"]=="BANK"][0]
+            transaction["BankAccount"] = dict(AccountID=bank)
+            for line in transaction["LineItems"]:
+                code = [acc["Code"] for acc in acc_list if acc["Name"]==line["AccountName"]][0]
+                line["AccountCode"] = code
+            contact = [contact["ContactID"] for contact in contact_list if contact["Name"]==transaction["Contact"]][0]
+            transaction["Contact"] = dict(ContactID=contact)
             res = client.push("Bank_Transactions", transaction)
             pushed_ids.extend([transaction['BankTransactionID'] for transaction in res['BankTransactions']])
     except:
+        logger.warning(f"Invalid Payload: {json.dumps(transaction)}")
+        logger.info("Deleting posted transactions")
         for id in pushed_ids:
             client.push("Bank_Transactions", dict(BankTransactionID=id, Status="DELETED"))
 
