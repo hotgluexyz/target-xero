@@ -275,7 +275,7 @@ class XeroClient():
         response = self.session.send(request.prepare())
 
         if response.status_code != 200:
-            raise_for_error(response)
+            raise_for_error(response.json())
             return None
         else:
             return response.json()
