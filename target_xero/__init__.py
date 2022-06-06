@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
+import logging
 import os
 import json
 import sys
 import argparse
 import json
 import pandas as pd
-import logging
-import re
+import singer
 
 from target_xero.client import XeroClient
 
-logger = logging.getLogger("target-xero")
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
+logger = singer.get_logger()
 
 def load_json(path):
     with open(path) as f:
@@ -295,7 +292,17 @@ def main():
     # Parse command line arguments
     args = parse_args()
 
-    # Upload the new QBO data
+    if args.config.get("log_file", "error_log.txt"):
+        logger.setLevel(logging.WARNING)
+        fileh = logging.FileHandler(args.config.get("log_file"), 'a')
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        fileh.setFormatter(formatter)
+
+        for hdlr in logger.handlers[:]:
+            logger.removeHandler(hdlr)
+        logger.addHandler(fileh)
+
+    # Upload the new Xero data
     upload(args.config, args)
 
 

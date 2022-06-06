@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='target-xero',
-    version='1.0.2',
+    version='1.0.3',
     description='hotglue target for exporting data to Xero API',
     author='hotglue',
     url='https://hotglue.xyz',
