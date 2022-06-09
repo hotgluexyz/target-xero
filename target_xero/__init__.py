@@ -258,15 +258,18 @@ def upload_transactions(config, client):
         bank = [acc["AccountID"] for acc in acc_list if acc["Name"]==transaction["Bank"] and acc["Type"]=="BANK"]
         if not bank:
             logger.warning(f"Invalid Bank: {transaction['Bank']}")
+        else:
             transaction["BankAccount"] = dict(AccountID=bank[0])
         for line in transaction["LineItems"]:
             code = [acc["Code"] for acc in acc_list if acc["Name"]==line["AccountName"]]
             if not code:
                 logger.warning(f"Invalid AccountName: {line['AccountName']}")
+            else:
                 line["AccountCode"] = code[0]
         contact = [contact["ContactID"] for contact in contact_list if contact["Name"]==transaction["Contact"]]
         if not contact:
             logger.warning(f"Invalid Contact: {transaction['Contact']}")
+        else:
             transaction["Contact"] = dict(ContactID=contact[0])
         res = client.push("Bank_Transactions", transaction)
         if res.status_code > 300:
