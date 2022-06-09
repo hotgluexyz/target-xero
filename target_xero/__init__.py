@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
+import logging
 import os
 import json
 import sys
 import argparse
 import json
 import pandas as pd
-import logging
-import re
+import singer
 
 from target_xero.client import XeroClient
 
-logger = logging.getLogger("target-xero")
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
+logger = singer.get_logger()
 
 def load_json(path):
     with open(path) as f:
@@ -256,22 +253,31 @@ def upload_transactions(config, client):
     contact_list = client.filter("Contacts")
 
     pushed_ids = []
-    try:
-        for transaction in transactions:
-            bank = [acc["AccountID"] for acc in acc_list if acc["Name"]==transaction["Bank"] and acc["Type"]=="BANK"][0]
-            transaction["BankAccount"] = dict(AccountID=bank)
-            for line in transaction["LineItems"]:
-                code = [acc["Code"] for acc in acc_list if acc["Name"]==line["AccountName"]][0]
-                line["AccountCode"] = code
-            contact = [contact["ContactID"] for contact in contact_list if contact["Name"]==transaction["Contact"]][0]
-            transaction["Contact"] = dict(ContactID=contact)
-            res = client.push("Bank_Transactions", transaction)
-            pushed_ids.extend([transaction['BankTransactionID'] for transaction in res['BankTransactions']])
-    except:
-        logger.warning(f"Invalid Payload: {json.dumps(transaction)}")
-        logger.info("Deleting posted transactions")
-        for id in pushed_ids:
-            client.push("Bank_Transactions", dict(BankTransactionID=id, Status="DELETED"))
+
+    for transaction in transactions:
+        bank = [acc["AccountID"] for acc in acc_list if acc["Name"]==transaction["Bank"] and acc["Type"]=="BANK"]
+        if not bank:
+            logger.warning(f"Invalid Bank: {transaction['Bank']}")
+            transaction["BankAccount"] = dict(AccountID=bank[0])
+        for line in transaction["LineItems"]:
+            code = [acc["Code"] for acc in acc_list if acc["Name"]==line["AccountName"]]
+            if not code:
+                logger.warning(f"Invalid AccountName: {line['AccountName']}")
+                line["AccountCode"] = code[0]
+        contact = [contact["ContactID"] for contact in contact_list if contact["Name"]==transaction["Contact"]]
+        if not contact:
+            logger.warning(f"Invalid Contact: {transaction['Contact']}")
+            transaction["Contact"] = dict(ContactID=contact[0])
+        res = client.push("Bank_Transactions", transaction)
+        if res.status_code > 300:
+            with open(config["log_file"], "w") as f:
+                json.dump(res.json(), f)
+            logger.warning(f"Invalid Payload: {json.dumps(transaction)}")
+            logger.info("Deleting posted transactions")
+            for id in pushed_ids:
+                client.push("Bank_Transactions", dict(BankTransactionID=id, Status="DELETED"))
+            break
+        pushed_ids.extend([transaction['BankTransactionID'] for transaction in res['BankTransactions']])
 
 def upload(config, args):
     # Login update tap config with new refresh token if necessary
@@ -295,7 +301,10 @@ def main():
     # Parse command line arguments
     args = parse_args()
 
-    # Upload the new QBO data
+    if not args.config.get("log_file"):
+        args.config["log_file"] = "error_log.json"
+
+    # Upload the new Xero data
     upload(args.config, args)
 
 
