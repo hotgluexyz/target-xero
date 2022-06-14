@@ -275,7 +275,7 @@ def upload_transactions(config, client):
         if res.status_code > 300:
             with open(config["log_file"], "w") as f:
                 json.dump(res.json(), f)
-            logger.warning(f"Invalid Payload: {json.dumps(transaction)}")
+            logger.error(f"Invalid Payload: {json.dumps(transaction)}")
             logger.info("Deleting posted transactions")
             for id in pushed_ids:
                 client.push("Bank_Transactions", dict(BankTransactionID=id, Status="DELETED"))
@@ -284,8 +284,12 @@ def upload_transactions(config, client):
 
 def upload(config, args):
     # Login update tap config with new refresh token if necessary
-    client = XeroClient(config)
-    client.refresh_credentials(config, args.config_path)
+    try:
+        client = XeroClient(config)
+        client.refresh_credentials(config, args.config_path)
+    except Exception as e:
+        with open(config["log_file"], "w") as f:
+             json.dump({"Type": "AuthenticationError", "Message": str(e)}, f)
 
     if os.path.exists(f"{config['input_path']}/Transactions.json"):
         logger.info("Found Transactions.json, uploading...")
