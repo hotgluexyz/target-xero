@@ -183,6 +183,7 @@ def post_journal_entries(journals, client):
         try:
             # Push the journal entry
             res = client.push("Manual_Journals", journal)
+            res = res.json()
             # Add to array of posted journals
             posted_journals.append(res['ManualJournals'][0]['ManualJournalID'])
         except Exception as e:
