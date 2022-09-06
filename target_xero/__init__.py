@@ -199,6 +199,11 @@ def post_journal_entries(journals, client):
 
                 print(f"Voided Journal Entry {pje}")
 
+            try:
+                logger.error(f"API RESPONSE: {json.dumps(res)}")
+            except:
+                logger.error(f"{e}")
+
             raise Exception("Posting Xero JournalEntries failed!")
 
 
