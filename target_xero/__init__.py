@@ -296,6 +296,7 @@ def upload(config, args):
     except Exception as e:
         with open(config["log_file"], "w") as f:
              json.dump({"Type": "AuthenticationError", "Message": str(e)}, f)
+             raise Exception("Authentication Error")
 
     if os.path.exists(f"{config['input_path']}/Transactions.json"):
         logger.info("Found Transactions.json, uploading...")
