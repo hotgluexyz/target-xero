@@ -7,7 +7,6 @@ import argparse
 import json
 import pandas as pd
 import singer
-import sys
 
 from target_xero.client import XeroClient
 
