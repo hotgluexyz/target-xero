@@ -7,6 +7,7 @@ import argparse
 import json
 import pandas as pd
 import singer
+import sys
 
 from target_xero.client import XeroClient
 
@@ -296,6 +297,7 @@ def upload(config, args):
     except Exception as e:
         with open(config["log_file"], "w") as f:
              json.dump({"Type": "AuthenticationError", "Message": str(e)}, f)
+             raise Exception("Authentication Error")
 
     if os.path.exists(f"{config['input_path']}/Transactions.json"):
         logger.info("Found Transactions.json, uploading...")
