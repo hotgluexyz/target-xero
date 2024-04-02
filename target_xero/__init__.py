@@ -105,6 +105,7 @@ def load_journal_entries(config, accounts, categories):
                 errored = True
                 logger.error(
                     f"Account is missing on Journal Entry {je_id}! Name={acct_name} No={acct_num}")
+                raise Exception(f"Account is missing on Journal Entry {je_id} Name={acct_name} No={acct_num}")
 
             # Get the Quickbooks Class Ref
             class_name = row['Class']
