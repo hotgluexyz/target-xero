@@ -7,7 +7,6 @@ import argparse
 import json
 import pandas as pd
 import singer
-
 from target_xero.client import XeroClient
 
 logger = singer.get_logger()
@@ -185,6 +184,9 @@ def post_journal_entries(journals, client):
             # Push the journal entry
             res = client.push("Manual_Journals", journal)
             res = res.json()
+            if "Type" in res and res["Type"] == "ValidationException" and "Elements" in res:
+                #Log validation errors
+                logger.error(f"Journal Entry validation error: {json.dumps(res['Elements'])}")
             # Add to array of posted journals
             posted_journals.append(res['ManualJournals'][0]['ManualJournalID'])
         except Exception as e:
@@ -199,13 +201,16 @@ def post_journal_entries(journals, client):
                 })
 
                 print(f"Voided Journal Entry {pje}")
-
+            #Just increase the exception was raised due to json decode try fallback and read from the text    
+            if hasattr(res, 'text'):
+                # We need to do this so that the raised exception can be read from the res variable.
+                res = res.text    
             try:
                 logger.error(f"API RESPONSE: {json.dumps(res)}")
             except:
                 logger.error(f"{e}")
 
-            raise Exception("Posting Xero JournalEntries failed!")
+            raise Exception(f"Posting Xero JournalEntries failed! {res}")
 
 
 def upload_journals(config, client):
