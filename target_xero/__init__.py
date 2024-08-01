@@ -95,16 +95,23 @@ def load_journal_entries(config, accounts, categories):
             # Get the Quickbooks Account Ref
             acct_num = str(row['Account Number'])
             acct_name = row['Account Name']
-            acct_code = accounts.get(
-                acct_num, accounts.get(acct_name, {})).get("Code")
+            if not acct_num and not acct_name:
+                raise Exception(
+                    f"Account Number and account Name are missing. Please check the details for Journal Entry {je_id}."
+                )
+
+            acct_code = accounts.get(acct_num, accounts.get(acct_name, {})).get("Code")
 
             if acct_code is not None:
                 line_item["AccountCode"] = acct_code
             else:
                 errored = True
                 logger.error(
-                    f"Account is missing on Journal Entry {je_id}! Name={acct_name} No={acct_num}")
-                raise Exception(f"Account is missing on Journal Entry {je_id} Name={acct_name} No={acct_num}")
+                    f"Account Name='{acct_name}' No={acct_num} not found in Xero. Verify the details for Journal Entry {je_id} or ensure the account exists for the specified tenant_id in the config file."
+                )
+                raise Exception(
+                    f"Account Name='{acct_name}' No={acct_num} not found in Xero. Verify the details for Journal Entry {je_id} or ensure the account exists for the specified tenant_id in the config file."
+                )
 
             # Get the Quickbooks Class Ref
             class_name = row['Class']
@@ -114,7 +121,7 @@ def load_journal_entries(config, accounts, categories):
                 add_tracking(line_item, tracking)
             else:
                 logger.warning(
-                    f"Class is missing on Journal Entry {je_id}! Name={class_name}")
+                    f"Class '{class_name}' not found in Xero for Journal Entry {je_id}!")
 
             # Get and set department if present
             if 'department' in config and config['department'] in row.index:
