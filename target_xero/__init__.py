@@ -198,7 +198,7 @@ def post_journal_entries(journals, client):
             posted_journals.append(res['ManualJournals'][0]['ManualJournalID'])
         except Exception as e:
             logger.error(
-                f"Failure creating entity error=[{e}] journal=[{journal}]")
+                f"Failure creating entity error=[{e}] journal=[{journal}] response=[{res.content}] status_code=[{res.status_code}]")
 
             # Void all posted JEs (don't want to allow a partially successful post)
             for pje in posted_journals:
