@@ -273,7 +273,8 @@ class XeroClient():
 
         request = requests.Request("POST", url, headers=headers, json=payload)
         response = self.session.send(request.prepare())
-
+        if response.status_code == 429:
+            raise_for_error(response)
         return response
 
 

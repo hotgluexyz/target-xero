@@ -197,8 +197,17 @@ def post_journal_entries(journals, client):
             # Add to array of posted journals
             posted_journals.append(res['ManualJournals'][0]['ManualJournalID'])
         except Exception as e:
-            logger.error(
-                f"Failure creating entity error=[{e}] journal=[{journal}] response=[{res.content}] status_code=[{res.status_code}]")
+            try:
+                # raise response in error if response is available
+                res = res.text
+                logger.error(
+                    f"Failure creating entity error=[{e}] journal=[{journal}] response=[{res.content}] status_code=[{res.status_code}]"
+                )
+            except:
+                res = e.__str__()    
+                logger.error(
+                    f"Failure creating entity error=[{e}] journal=[{journal}]"
+                )
 
             # Void all posted JEs (don't want to allow a partially successful post)
             for pje in posted_journals:
@@ -208,14 +217,6 @@ def post_journal_entries(journals, client):
                 })
 
                 print(f"Voided Journal Entry {pje}")
-            #Just increase the exception was raised due to json decode try fallback and read from the text    
-            if hasattr(res, 'text'):
-                # We need to do this so that the raised exception can be read from the res variable.
-                res = res.text    
-            try:
-                logger.error(f"API RESPONSE: {json.dumps(res)}")
-            except:
-                logger.error(f"{e}")
 
             raise Exception(f"Posting Xero JournalEntries failed! {res}")
 
