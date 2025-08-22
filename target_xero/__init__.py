@@ -53,7 +53,7 @@ def load_journal_entries(config, accounts, categories):
     # Get input path
     input_path = f"{config['input_path']}/JournalEntries.csv"
     # Read the passed CSV
-    df = pd.read_csv(input_path)
+    df = pd.read_csv(input_path, dtype={"Account Number": "object"})
     # Verify it has required columns
     cols = list(df.columns)
     REQUIRED_COLS = ["Transaction Date", "Journal Entry Id", "Class",
