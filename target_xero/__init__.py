@@ -192,7 +192,6 @@ def post_journal_entries(journals, client):
             res = client.push("Manual_Journals", journal)
             res = res.json()
             if "Type" in res and res["Type"] == "ValidationException" and "Elements" in res:
-                #Log validation errors
                 error_message = f"Journal Entry validation error: {json.dumps(res['Elements'])}"
                 raise Exception(error_message)
             # Add to array of posted journals
@@ -221,7 +220,7 @@ def post_journal_entries(journals, client):
                     'Status': 'VOIDED'
                 })
 
-                print(f"Voided Journal Entry {pje}")
+                logger.info(f"Voided Journal Entry {pje}")
 
             raise Exception(f"Posting Xero JournalEntries failed! {res}")
 
