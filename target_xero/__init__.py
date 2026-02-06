@@ -193,9 +193,14 @@ def post_journal_entries(journals, client):
             res = res.json()
             if "Type" in res and res["Type"] == "ValidationException" and "Elements" in res:
                 #Log validation errors
-                logger.error(f"Journal Entry validation error: {json.dumps(res['Elements'])}")
+                error_message = f"Journal Entry validation error: {json.dumps(res['Elements'])}"
+                raise Exception(error_message)
             # Add to array of posted journals
-            posted_journals.append(res['ManualJournals'][0]['ManualJournalID'])
+            posted_journal = res.get('ManualJournals', [{}])[0].get('ManualJournalID')
+            if posted_journal:
+                posted_journals.append(posted_journal)
+            else:
+                raise Exception("No posted journal found in response")
         except Exception as e:
             try:
                 # raise response in error if response is available
