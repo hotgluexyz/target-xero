@@ -166,6 +166,9 @@ def load_journal_entries(config, accounts, categories):
             'JournalLines': line_items
         }
 
+        if config.get('hide_on_cash_basis_reports'):
+            entry['ShowOnCashBasisReports'] = False
+
         journal_entries.append(entry)
 
     # Format the dates
