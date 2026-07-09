@@ -14,7 +14,8 @@ setup(
         'requests==2.20.0',
         'pandas==1.3.5',
         'argparse==1.4.0',
-        "singer-python==5.9.0"
+        "singer-python==5.9.0",
+        "numpy==1.23.5"
     ],
     entry_points='''
         [console_scripts]
