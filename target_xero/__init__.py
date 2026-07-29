@@ -48,8 +48,24 @@ def parse_args():
 
     return args
 
+def trackings_from_extra_columns(row, tracking_by_category, default_cols={}):
+    """Pass through non-default CSV columns whose names match Xero tracking categories."""
+    trackings = []
+    for col in row.index:
+        if col in default_cols:
+            continue
+        options = tracking_by_category.get(col)
+        if options is None:
+            continue
+        val = row[col]
+        if pd.isna(val) or str(val).strip() == "":
+            continue
+        tracking = options.get(val, options.get(str(val)))
+        if tracking is not None:
+            trackings.append(tracking)
+    return trackings
 
-def load_journal_entries(config, accounts, categories):
+def load_journal_entries(config, accounts, categories, tracking_by_category={}):
     # Get input path
     input_path = f"{config['input_path']}/JournalEntries.csv"
     # Read the passed CSV
@@ -58,6 +74,8 @@ def load_journal_entries(config, accounts, categories):
     cols = list(df.columns)
     REQUIRED_COLS = ["Transaction Date", "Journal Entry Id", "Class",
                      "Account Number", "Account Name", "Posting Type", "Description"]
+    # Amount is used on every line but not historically in the required-cols check.
+    DEFAULT_COLS = set(REQUIRED_COLS) | {"Amount"}
 
     if not all(col in cols for col in REQUIRED_COLS):
         logger.error(
@@ -123,37 +141,8 @@ def load_journal_entries(config, accounts, categories):
                 logger.warning(
                     f"Class '{class_name}' not found in Xero for Journal Entry {je_id}!")
 
-            # Get and set department if present
-            if 'department' in config and config['department'] in row.index:
-                dept_name = row[config['department']]
-                tracking = categories.get(dept_name)
-
-                if tracking is not None:
-                    add_tracking(line_item, tracking)
-
-            # Get and set location if present
-            if 'location' in config and config['location'] in row.index:
-                location = row[config['location']]
-                tracking = categories.get(location)
-
-                if tracking is not None:
-                    add_tracking(line_item, tracking)
-
-            # Get and set customer_id if present
-            if 'customer_id' in config and config['customer_id'] in row.index:
-                customer_id = row[config['customer_id']]
-                tracking = categories.get(customer_id)
-
-                if tracking is not None:
-                    add_tracking(line_item, tracking)
-
-            # Get and set customer_name if present
-            if 'customer_name' in config and config['customer_name'] in row.index:
-                customer_name = row[config['customer_name']]
-                tracking = categories.get(customer_name)
-
-                if tracking is not None:
-                    add_tracking(line_item, tracking)
+            for tracking in trackings_from_extra_columns(row, tracking_by_category, DEFAULT_COLS):
+                add_tracking(line_item, tracking)
 
             # Create the line item
             line_items.append(line_item)
@@ -249,21 +238,24 @@ def upload_journals(config, client):
         accounts[code] = acc_ref
         accounts[name] = acc_ref
 
-    # Process categories
+    # Process categories: option->tracking for Class; category->options for CSV pass-through
     categories = {}
+    tracking_by_category = {}
 
     for category in cat_list:
         name = category['Name']
-        options = [x['Name'] for x in category['Options']]
-
-        for option in options:
-            categories[option] = {
+        tracking_by_category[name] = {}
+        for option in category['Options']:
+            opt_name = option['Name']
+            tracking = {
                 'Name': name,
-                'Option': option
+                'Option': opt_name
             }
+            categories[opt_name] = tracking
+            tracking_by_category[name][opt_name] = tracking
 
     # Load Journal Entries CSV to post + Convert to Xero format
-    journals = load_journal_entries(config, accounts, categories)
+    journals = load_journal_entries(config, accounts, categories, tracking_by_category)
     logger.info(json.dumps(journals))
 
     # Post the journal entries to Xero
