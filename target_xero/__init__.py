@@ -244,15 +244,15 @@ def upload_journals(config, client):
 
     for category in cat_list:
         name = category['Name']
+        options = [x['Name'] for x in category['Options']]
         tracking_by_category[name] = {}
-        for option in category['Options']:
-            opt_name = option['Name']
+        for option in options:
             tracking = {
                 'Name': name,
-                'Option': opt_name
+                'Option': option
             }
-            categories[opt_name] = tracking
-            tracking_by_category[name][opt_name] = tracking
+            categories[option] = tracking
+            tracking_by_category[name][option] = tracking
 
     # Load Journal Entries CSV to post + Convert to Xero format
     journals = load_journal_entries(config, accounts, categories, tracking_by_category)
