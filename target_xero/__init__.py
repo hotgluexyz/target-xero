@@ -60,7 +60,8 @@ def trackings_from_extra_columns(row, tracking_by_category, default_cols={}):
         val = row[col]
         if pd.isna(val) or str(val).strip() == "":
             continue
-        tracking = options.get(val, options.get(str(val)))
+        # Match master: raw cell lookup only (no str()/float coercion)
+        tracking = options.get(val)
         if tracking is not None:
             trackings.append(tracking)
     return trackings
