@@ -72,8 +72,8 @@ def load_journal_entries(config, accounts, categories, tracking_by_category={}):
     df = pd.read_csv(input_path, dtype={"Account Number": "object"})
     # Verify it has required columns
     cols = list(df.columns)
-    REQUIRED_COLS = ["Transaction Date", "Journal Entry Id",
-                     "Account Number", "Account Name", "Posting Type", "Description", "Amount"]
+    REQUIRED_COLS = ["Transaction Date", "Journal Entry Id", "Account Number",
+                     "Account Name", "Posting Type", "Description", "Amount"]
 
     if not all(col in cols for col in REQUIRED_COLS):
         logger.error(
@@ -133,7 +133,7 @@ def load_journal_entries(config, accounts, categories, tracking_by_category={}):
             # We decide to keep Class tracking as broad categories because we do not want to break current working tenants.
             # Class will still look on every category tracking value;
             # i.e. if the value in the Class column is "ABC", and we have Tracking Category Region with option "ABC", the tracking 'Tracking' = [{'Name': 'Region', 'Option': 'ABC'}] will be added to the line item.
-            class_name = row['Class']
+            class_name = row.get('Class') or ''
             tracking = categories.get(class_name)
 
             if tracking is not None:
