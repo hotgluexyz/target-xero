@@ -2,7 +2,6 @@
 import logging
 import os
 import json
-from sqlite3 import register_converter
 import sys
 import argparse
 import json
