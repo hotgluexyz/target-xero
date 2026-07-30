@@ -48,16 +48,31 @@ def parse_args():
 
     return args
 
+def trackings_from_columns(row, tracking_by_category):
+    """Pass through CSV columns whose names match Xero tracking categories."""
+    trackings = []
+    for col in row.index:
+        options = tracking_by_category.get(col)
+        if options is None:
+            continue
+        val = row[col]
+        if pd.isna(val) or str(val).strip() == "":
+            continue
+        # Match master: raw cell lookup only (no str()/float coercion)
+        tracking = options.get(val)
+        if tracking is not None:
+            trackings.append(tracking)
+    return trackings
 
-def load_journal_entries(config, accounts, categories):
+def load_journal_entries(config, accounts, categories, tracking_by_category={}):
     # Get input path
     input_path = f"{config['input_path']}/JournalEntries.csv"
     # Read the passed CSV
     df = pd.read_csv(input_path, dtype={"Account Number": "object"})
     # Verify it has required columns
     cols = list(df.columns)
-    REQUIRED_COLS = ["Transaction Date", "Journal Entry Id", "Class",
-                     "Account Number", "Account Name", "Posting Type", "Description"]
+    REQUIRED_COLS = ["Transaction Date", "Journal Entry Id", "Account Number",
+                     "Account Name", "Posting Type", "Description", "Amount"]
 
     if not all(col in cols for col in REQUIRED_COLS):
         logger.error(
@@ -114,46 +129,21 @@ def load_journal_entries(config, accounts, categories):
                 )
 
             # Get the Quickbooks Class Ref
-            class_name = row['Class']
+            # We decide to keep Class tracking as broad categories because we do not want to break current working tenants.
+            # Class will still look on every category tracking value;
+            # i.e. if the value in the Class column is "ABC", and we have Tracking Category Region with option "ABC", the tracking 'Tracking' = [{'Name': 'Region', 'Option': 'ABC'}] will be added to the line item.
+            class_name = row.get('Class') or ''
             tracking = categories.get(class_name)
 
             if tracking is not None:
                 add_tracking(line_item, tracking)
-            else:
+            elif class_name:
                 logger.warning(
                     f"Class '{class_name}' not found in Xero for Journal Entry {je_id}!")
 
-            # Get and set department if present
-            if 'department' in config and config['department'] in row.index:
-                dept_name = row[config['department']]
-                tracking = categories.get(dept_name)
-
-                if tracking is not None:
-                    add_tracking(line_item, tracking)
-
-            # Get and set location if present
-            if 'location' in config and config['location'] in row.index:
-                location = row[config['location']]
-                tracking = categories.get(location)
-
-                if tracking is not None:
-                    add_tracking(line_item, tracking)
-
-            # Get and set customer_id if present
-            if 'customer_id' in config and config['customer_id'] in row.index:
-                customer_id = row[config['customer_id']]
-                tracking = categories.get(customer_id)
-
-                if tracking is not None:
-                    add_tracking(line_item, tracking)
-
-            # Get and set customer_name if present
-            if 'customer_name' in config and config['customer_name'] in row.index:
-                customer_name = row[config['customer_name']]
-                tracking = categories.get(customer_name)
-
-                if tracking is not None:
-                    add_tracking(line_item, tracking)
+            # For every other tracking category, we need to have the CSV column name match the Xero tracking category name.
+            for tracking in trackings_from_columns(row, tracking_by_category):
+                add_tracking(line_item, tracking)
 
             # Create the line item
             line_items.append(line_item)
@@ -249,21 +239,24 @@ def upload_journals(config, client):
         accounts[code] = acc_ref
         accounts[name] = acc_ref
 
-    # Process categories
+    # Process categories: option->tracking for Class; category->options for CSV pass-through
     categories = {}
+    tracking_by_category = {}
 
     for category in cat_list:
         name = category['Name']
         options = [x['Name'] for x in category['Options']]
-
+        tracking_by_category[name] = {}
         for option in options:
-            categories[option] = {
+            tracking = {
                 'Name': name,
                 'Option': option
             }
+            categories[option] = tracking
+            tracking_by_category[name][option] = tracking
 
     # Load Journal Entries CSV to post + Convert to Xero format
-    journals = load_journal_entries(config, accounts, categories)
+    journals = load_journal_entries(config, accounts, categories, tracking_by_category)
     logger.info(json.dumps(journals))
 
     # Post the journal entries to Xero
