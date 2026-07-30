@@ -48,11 +48,11 @@ def parse_args():
 
     return args
 
-def trackings_from_extra_columns(row, tracking_by_category, default_cols={}):
+def trackings_from_extra_columns(row, tracking_by_category, required_cols={}):
     """Pass through non-default CSV columns whose names match Xero tracking categories."""
     trackings = []
     for col in row.index:
-        if col in default_cols:
+        if col in required_cols:
             continue
         options = tracking_by_category.get(col)
         if options is None:
@@ -74,9 +74,7 @@ def load_journal_entries(config, accounts, categories, tracking_by_category={}):
     # Verify it has required columns
     cols = list(df.columns)
     REQUIRED_COLS = ["Transaction Date", "Journal Entry Id", "Class",
-                     "Account Number", "Account Name", "Posting Type", "Description"]
-    # Amount is used on every line but not historically in the required-cols check.
-    DEFAULT_COLS = set(REQUIRED_COLS) | {"Amount"}
+                     "Account Number", "Account Name", "Posting Type", "Description", "Amount"]
 
     if not all(col in cols for col in REQUIRED_COLS):
         logger.error(
@@ -146,7 +144,7 @@ def load_journal_entries(config, accounts, categories, tracking_by_category={}):
                     f"Class '{class_name}' not found in Xero for Journal Entry {je_id}!")
 
             # For every other tracking category, we need to have the CSV column name match the Xero tracking category name.
-            for tracking in trackings_from_extra_columns(row, tracking_by_category, DEFAULT_COLS):
+            for tracking in trackings_from_extra_columns(row, tracking_by_category, REQUIRED_COLS):
                 add_tracking(line_item, tracking)
 
             # Create the line item
