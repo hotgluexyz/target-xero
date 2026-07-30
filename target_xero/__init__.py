@@ -138,7 +138,7 @@ def load_journal_entries(config, accounts, categories, tracking_by_category={}):
 
             if tracking is not None:
                 add_tracking(line_item, tracking)
-            else:
+            elif class_name:
                 logger.warning(
                     f"Class '{class_name}' not found in Xero for Journal Entry {je_id}!")
 
