@@ -133,6 +133,9 @@ def load_journal_entries(config, accounts, categories, tracking_by_category={}):
                 )
 
             # Get the Quickbooks Class Ref
+            # We decide to keep Class tracking as broad categories because we do not want to break current working tenants.
+            # Class will still look on every category tracking value;
+            # i.e. if the value in the Class column is "ABC", and we have Tracking Category Region with option "ABC", the tracking 'Tracking' = [{'Name': 'Region', 'Option': 'ABC'}] will be added to the line item.
             class_name = row['Class']
             tracking = categories.get(class_name)
 
@@ -142,6 +145,7 @@ def load_journal_entries(config, accounts, categories, tracking_by_category={}):
                 logger.warning(
                     f"Class '{class_name}' not found in Xero for Journal Entry {je_id}!")
 
+            # For every other tracking category, we need to have the CSV column name match the Xero tracking category name.
             for tracking in trackings_from_extra_columns(row, tracking_by_category, DEFAULT_COLS):
                 add_tracking(line_item, tracking)
 
