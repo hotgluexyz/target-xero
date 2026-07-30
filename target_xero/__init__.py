@@ -2,6 +2,7 @@
 import logging
 import os
 import json
+from sqlite3 import register_converter
 import sys
 import argparse
 import json
@@ -48,12 +49,10 @@ def parse_args():
 
     return args
 
-def trackings_from_extra_columns(row, tracking_by_category, required_cols={}):
-    """Pass through non-default CSV columns whose names match Xero tracking categories."""
+def trackings_from_columns(row, tracking_by_category):
+    """Pass through CSV columns whose names match Xero tracking categories."""
     trackings = []
     for col in row.index:
-        if col in required_cols:
-            continue
         options = tracking_by_category.get(col)
         if options is None:
             continue
@@ -73,7 +72,7 @@ def load_journal_entries(config, accounts, categories, tracking_by_category={}):
     df = pd.read_csv(input_path, dtype={"Account Number": "object"})
     # Verify it has required columns
     cols = list(df.columns)
-    REQUIRED_COLS = ["Transaction Date", "Journal Entry Id", "Class",
+    REQUIRED_COLS = ["Transaction Date", "Journal Entry Id",
                      "Account Number", "Account Name", "Posting Type", "Description", "Amount"]
 
     if not all(col in cols for col in REQUIRED_COLS):
@@ -144,7 +143,7 @@ def load_journal_entries(config, accounts, categories, tracking_by_category={}):
                     f"Class '{class_name}' not found in Xero for Journal Entry {je_id}!")
 
             # For every other tracking category, we need to have the CSV column name match the Xero tracking category name.
-            for tracking in trackings_from_extra_columns(row, tracking_by_category, REQUIRED_COLS):
+            for tracking in trackings_from_columns(row, tracking_by_category):
                 add_tracking(line_item, tracking)
 
             # Create the line item
