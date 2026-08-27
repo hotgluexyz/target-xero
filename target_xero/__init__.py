@@ -88,9 +88,7 @@ def load_journal_entries(config, accounts, categories, tracking_by_category={}):
         else:
             line_item["Tracking"] = [tracking]
 
-    def build_lines(x):
-        # Get the journal entry id
-        je_id = x['Journal Entry Id'].iloc[0]
+    def build_lines(x, je_id):
         logger.info(f"Converting {je_id}...")
         line_items = []
 
@@ -165,7 +163,8 @@ def load_journal_entries(config, accounts, categories, tracking_by_category={}):
     df['Transaction Date'] = pd.to_datetime(df['Transaction Date'])
     df['Transaction Date'] = df['Transaction Date'].dt.strftime('%Y-%m-%d')
     # Build the entries
-    df.groupby("Journal Entry Id").apply(build_lines)
+    for je_id, group in df.groupby("Journal Entry Id"):
+        build_lines(group, je_id)
 
     if errored:
         raise Exception("Building Xero JournalEntries failed!")

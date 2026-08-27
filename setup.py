@@ -9,10 +9,14 @@ setup(
     author='hotglue',
     url='https://hotglue.xyz',
     classifiers=['Programming Language :: Python :: 3 :: Only'],
+    python_requires='>=3.7',
     py_modules=['target_xero'],
     install_requires=[
-        'requests==2.20.0',
-        'pandas==1.3.5',
+        'requests==2.20.0; python_version < "3.12"',
+        'requests>=2.32.3; python_version >= "3.12"',
+        'numpy>=1.21.0,<2; python_version < "3.11"',
+        'pandas==1.3.5; python_version < "3.11"',
+        'pandas>=2.3.3; python_version >= "3.11"',
         'argparse==1.4.0',
         "singer-python==5.9.0"
     ],
