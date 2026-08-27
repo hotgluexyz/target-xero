@@ -299,7 +299,7 @@ def upload_transactions(config, client):
             for id in pushed_ids:
                 client.push("Bank_Transactions", dict(BankTransactionID=id, Status="DELETED"))
             break
-        pushed_ids.extend([transaction['BankTransactionID'] for transaction in res['BankTransactions']])
+        pushed_ids.extend([transaction['BankTransactionID'] for transaction in res.json()['BankTransactions']])
 
 def upload(config, args):
     # Login update tap config with new refresh token if necessary
