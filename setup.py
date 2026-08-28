@@ -14,9 +14,10 @@ setup(
     install_requires=[
         'requests==2.20.0; python_version < "3.12"',
         'requests>=2.32.4; python_version >= "3.12"',
-        'numpy>=1.21.0,<2; python_version < "3.11"',
-        'pandas==1.3.5; python_version < "3.11"',
-        'pandas>=2.3.3; python_version >= "3.11"',
+        'numpy>=1.21.0,<1.22; python_version < "3.8"',
+        'pandas==1.3.5; python_version < "3.8"',
+        'numpy>=1.26.0; python_version >= "3.8"',
+        'pandas>=2.3.3; python_version >= "3.8"',
         'argparse==1.4.0',
         "singer-python==5.9.0"
     ],
