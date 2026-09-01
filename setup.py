@@ -4,15 +4,20 @@ from setuptools import setup
 
 setup(
     name='target-xero',
-    version='1.0.6',
+    version='1.0.7',
     description='hotglue target for exporting data to Xero API',
     author='hotglue',
     url='https://hotglue.xyz',
     classifiers=['Programming Language :: Python :: 3 :: Only'],
+    python_requires='>=3.7.1',
     py_modules=['target_xero'],
     install_requires=[
-        'requests==2.20.0',
-        'pandas==1.3.5',
+        'requests==2.20.0; python_version < "3.12"',
+        'requests>=2.32.4; python_version >= "3.12"',
+        'numpy>=1.21.0,<1.22; python_version < "3.8"',
+        'pandas==1.3.5; python_version < "3.8"',
+        'numpy>=1.26.0; python_version >= "3.8"',
+        'pandas>=2.3.3; python_version >= "3.8"',
         'argparse==1.4.0',
         "singer-python==5.9.0"
     ],
