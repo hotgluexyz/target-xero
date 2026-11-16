@@ -8,7 +8,6 @@ from os.path import join
 from datetime import datetime, date, time, timedelta
 import requests
 from singer.utils import strftime, strptime_to_utc
-import six
 import pytz
 import backoff
 import singer
@@ -145,7 +144,7 @@ def _json_load_object_hook(_dict):
     # This was taken from the pyxero library and modified
     # to format the dates according to RFC3339
     for key, value in _dict.items():
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             value = parse_date(value)
             if value:
                 # NB> Pylint disabled because, regardless of idioms, this is more explicit than isinstance.
