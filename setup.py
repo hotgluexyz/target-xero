@@ -19,7 +19,7 @@ setup(
         'numpy>=1.26.0; python_version >= "3.8"',
         'pandas>=2.3.3; python_version >= "3.8"',
         'argparse==1.4.0',
-        "singer-python==5.9.0"
+        "singer-python==5.13.0"
     ],
     entry_points='''
         [console_scripts]
